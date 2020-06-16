@@ -7,16 +7,15 @@ Version = "1.1.1"
 ''' 
 Notes:
     Cooldowns on lines 16 and 17 are in seconds.
-    Line 17 is the command cooldown
-    Line 18 is the individual user cooldown
-    Line 19 is the runner name as it appears on speedrun.com
-    Match Category in Twitch Title to the Tab in hte main board. :) (Any% | World Peace | All Red Berries | 70 Star etc.)
+    Line 16 is the command cooldown
+    Line 17 is the individual user cooldown
+    Match Category in Twitch Title to the Tab in hte main board. :) (Any% | World Peace | All Red Berries | 70 Star etc.
 '''
 
 commandName = "!pb"     #String to start the command
 cooldown = 1            #Cooldown of the command in seconds
 userCooldown = 1        #Cooldown for individual user
-runner_name = 'Dangers'
+runner_name = 'Auro'
 
 import datetime         #For converting time from a number of seconds to a human readable format (1:23:45.67)
 import json             #For quickly / easily parsing data from speedrun.com/
@@ -40,7 +39,7 @@ def Execute(data):
             return
         gameURL = SpeedrunGame(game)
         id, category = getCategories(gameURL, title)
-        Parent.Log("!pb", "{} {}".format(id, category))
+        #Parent.Log("!pb", "{} {}".format(id, category))
         if id == -5 and category == -5:            # This means the category wasn't found in the twitch title
             send_message("I couldn't find any categories in the stream title.")
             Parent.AddUserCooldown(ScriptName, commandName, data.User, userCooldown)
@@ -53,13 +52,13 @@ def Execute(data):
             return
         run = getPB(id)
         if run == -3:
-            send_message("{} has no submitted PB in {} {}.".format(runner_name, game, category))
+            send_message("{} has no verified PB in {} {}.".format(runner_name, game, category))
             Parent.AddUserCooldown(ScriptName, commandName, data.User, userCooldown)
             Parent.AddCooldown(ScriptName, commandName, cooldown)
             return
-        Parent.Log("!pb", str(run))
+        #Parent.Log("!pb", str(run))
         Time = run['times']['primary_t']
-        Parent.Log("!pb", str(type(Time)))
+        #Parent.Log("!pb", str(type(Time)))
         TimeParsed = datetime.timedelta(seconds=Time)
         TimeString = str(TimeParsed)
         while TimeString[0] == '0' or TimeString[0] == ':':
@@ -120,35 +119,32 @@ def SpeedrunGame(TwitchGameName):
 
 def getRunnerName(speedrunner_id):
     #Get the runners ID from speedrun.com to query the speedrun API less.
-    Parent.Log("!pb", "Pulling from speedrun.com/api/v1/users/{}".format(speedrunner_id))
+    #Parent.Log("!pb", "Pulling from speedrun.com/api/v1/users/{}".format(speedrunner_id))
     runnerPage = Parent.GetRequest("https://speedrun.com/api/v1/users/{}".format(speedrunner_id), {})
     runnerPage = json.loads(runnerPage)                     #Get speedrun.com data for user code
-    Parent.Log("!pb", "Runner Page: {}".format(runnerPage))
+    #Parent.Log("!pb", "Runner Page: {}".format(runnerPage))
     runnerPage = json.loads(runnerPage['response'])
     speedrunner_name = runnerPage['data']['names']['international']   #Grab international name for runner
-    Parent.Log("!pb", "Runner Name is {}".format(speedrunner_name))
+    #Parent.Log("!pb", "Runner Name is {}".format(speedrunner_name))
     return speedrunner_name
 	
     
 def getGame():
-    #Pulls the json blob from twitch, and returns the Game (As a string), and the Title of the stream.
-    Parent.Log("!pb", "Connecting to Twitch API to pull the game you're playing.")
-    r = Parent.GetRequest("https://api.twitch.tv/helix/streams?user_login={}".format(Parent.GetChannelName()), headers)
-    rJson = json.loads(r)       #Parent.GetRequest pulls information back as a string, we're converting it to a json object
-    if rJson['status'] == 200:  # If successful response
-        Live = 1
-        GameJson = json.loads(rJson['response'])
-        #Parent.Log("!pb", "GameJson: {}".format(GameJson))
-        Game_Code = GameJson['data'][0]['game_id']
-        #Parent.Log("!pb", str(Game_Code))
-        #Twitch api stores games as an ID (######) we need a human readable game name
-        r = Parent.GetRequest("https://api.twitch.tv/helix/games?id={}".format(Game_Code), headers)
-        r = json.loads(json.loads(r)['response'])
-        game = r['data'][0]['name']
-        title = GameJson['data'][0]['title']
-        Parent.Log("!pb", "Title is : {}".format(title))
-        Parent.Log("!pb", "Game is {}".format(game))
-        return game, title
+    # Pulls the json blob from Decapi.me, and returns the Game (As a string), and the Title of the stream.
+    # Parent.Log("!wr", "Pulling stream information from decapi.me")
+    GameName = Parent.GetRequest("https://decapi.me/twitch/game/{}".format(Parent.GetChannelName()), headers)
+    GameName = json.loads(GameName) # Parent.GetRequest pulls information back as a string, we're converting it to a json object
+    if GameName['status'] == 200:  # If successful response
+        game = GameName['response']
+        title = Parent.GetRequest("https://decapi.me/twitch/title/{}".format(Parent.GetChannelName()), headers)
+        title = json.loads(title)
+        if title['status'] == 200:
+            title = title['response']
+            # Parent.Log("!wr", "Title is {}".format(title))
+            # Parent.Log("!wr", "Game is {}".format(game))
+            return game, title
+        else:
+            return -5, -5
     return -1, -1
 
 
@@ -157,7 +153,7 @@ def getCategories(game, TwitchTitle):
     #This functions returns a link to the leaderboard page, and the name of the category to print later...
     #Debating returning the blob
     categories = {}     # Category : Records Page
-    Parent.Log("!pb", "Getting list of category names from speedrun.com.")
+    #Parent.Log("!pb", "Getting list of category names from speedrun.com.")
     '''
     if "IL" in title:
         TYPE = 'per-level'
@@ -171,7 +167,7 @@ def getCategories(game, TwitchTitle):
             CategoryPage = json.loads(CategoryPage['response'])
             TwitchTitleUpper = TwitchTitle.upper()
             for each in CategoryPage['data']:
-                Parent.Log("!pb", "checking for {} in Title.".format(each['name']))
+                #Parent.Log("!pb", "checking for {} in Title.".format(each['name']))
                 if each['name'].upper() in TwitchTitleUpper and each['type'] == "per-game":
                     categories[each['name']] = each['id']
         else:   #Failed to load the categories page for the game ('game' value does not point to a valid page)
@@ -190,13 +186,13 @@ def getPB(id):
     RunnerPBs = Parent.GetRequest("https://www.speedrun.com/api/v1/users/{}/personal-bests".format(runner_name), {})
     RunnerPBs = json.loads(RunnerPBs)
     #Parent.Log("!pb", str(RunnerPBs))
-    Parent.Log("!pb", "Category id is {}".format(id))
+    #Parent.Log("!pb", "Category id is {}".format(id))
     if RunnerPBs['status'] != 200:
         Parent.Log("There was an issue getting {}s Personal Bests".format(runner_name))
         return "Blame speedrun.com for being broken. :)"
     PBs = json.loads(RunnerPBs['response'])
     for each in PBs['data']:
-        Parent.Log("!pb", str(each))
+        #Parent.Log("!pb", str(each))
         if each['run']['category'] == id:
             return each['run']
     return -3
