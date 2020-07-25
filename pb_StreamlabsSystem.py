@@ -100,19 +100,19 @@ def SpeedrunGame(TwitchGameName):
     elif TwitchGameName == "Super Mario World":
         return ["smw", "smwext"]
     elif TwitchGameName == "Super Mario Galaxy":
-        return ["smg1", ""]
+        return ["smg1", "smgce"]
     elif TwitchGameName == "Super Mario Galaxy 2":
-        return ["smg2", ""]
+        return ["smg2", "smg2"]
     elif TwitchGameName == "New Super Mario Bros.":
         return ["nsmb", "nsmbce"]
     elif TwitchGameName == "New Super Mario Bros. 2":
         return ["nsmb2", "nsmb2memes"]
     elif TwitchGameName == "New Super Mario Bros. U":
-        return ["nsmbu", ""]
+        return ["nsmbu", "nsmbu"]
     elif TwitchGameName == "New Super Mario Bros. Wii":
         return ["nsmbw", "nsmbwce"]
     elif TwitchGameName == "Super Mario 3D World":
-        return ["sm3dw", ""]
+        return ["sm3dw", "sm3dw"]
     elif TwitchGameName == "Yu-Gi-Oh! Forbidden Memories":
         return ["yugiohfm", "yugiohfmextensions"]
         
